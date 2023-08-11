@@ -20,22 +20,6 @@ namespace OkigaeSan
             return childrens;
         }
 
-        public static void CreateAnimation(GameObject obj, bool state)
-        {
-            string AssetsPath = "Assets/KanKan/OkigaeSan/Animation/";
-
-            float val = state ? 1f : 0f;
-            string sState = state ? "_On" : "_Off";
-
-            var curve = AnimationCurve.Linear(0, val, (float)1/60, val);
-            var clip = new AnimationClip();
-
-            clip.name = obj.name + sState;
-
-            clip.SetCurve(GetFullPath(obj), typeof(GameObject), "isActive", curve);
-            AssetDatabase.CreateAsset(clip, AssetsPath + clip.name + ".anim");
-        }
-
         public static string GetFullPath(GameObject obj)
         {
             return GetFullPath(obj.transform);
