@@ -60,7 +60,7 @@ namespace OkigaeSan
             {
                 anyStatePosition = new Vector3(0, -100, 0),
                 entryPosition = Vector3.zero,
-                exitPosition = new Vector3(500, 0, 0)
+                exitPosition = new Vector3(0, 100, 0)
             };
 
             var firstState = new AnimatorState
