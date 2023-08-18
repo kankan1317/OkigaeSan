@@ -8,6 +8,7 @@ namespace OkigaeSan
 {
     public partial class AnimationManager
     {
+        private readonly string AnimationFolderPath = "Assets/KanKan/OkigaeSan/Animation/";
         private AnimationClip CreateAnimation(GameObject obj,string uniqeName ,bool state)
         {
             string AssetsPath = "Assets/KanKan/OkigaeSan/Animation/";
