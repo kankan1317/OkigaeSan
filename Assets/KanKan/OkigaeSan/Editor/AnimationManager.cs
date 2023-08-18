@@ -66,7 +66,7 @@ namespace OkigaeSan
 
         public void RemoveObjects(string uniqeName)
         {
-
+            DeleteOnOffLayer(uniqeName);
         }
     }
 
