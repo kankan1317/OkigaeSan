@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System.IO;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -137,9 +138,35 @@ namespace OkigaeSan
             _controller.AddLayer(layer);
         }
 
-        private void DeleteOnOffLayer(string layerName, string localParamater)
+        private void DeleteOnOffLayer(string uniqeName)
         {
-
+            // 対象のLayerがあれば削除
+            for (int i = 0; i < _controller.layers.Length; i++)
+            {
+                if (_controller.layers[i].name == uniqeName)
+                {
+                    _controller.RemoveLayer(i);
+                }
+            }
+            // 対象のparameterがあれば削除
+            for (int i = 0; i < _controller.parameters.Length; i++)
+            {
+                if (_controller.parameters[i].name == uniqeName)
+                {
+                    _controller.RemoveParameter(_controller.parameters[i]);
+                }
+            }
+            // 対象のanimファイルがあれば削除
+            string animOnPath = AnimationFolderPath + uniqeName + "_On.anim";
+            string animOffPath = AnimationFolderPath + uniqeName + "_Off.anim";
+            if (File.Exists(animOnPath))
+            {
+                AssetDatabase.DeleteAsset(animOnPath);
+            }
+            if (File.Exists(animOffPath))
+            {
+                AssetDatabase.DeleteAsset(animOffPath);
+            }
         }
 
         private GameObject[] GetAnimatedObjects(AnimationClip clip)
