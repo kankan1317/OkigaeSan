@@ -11,8 +11,6 @@ namespace OkigaeSan
         private readonly string AnimationFolderPath = "Assets/KanKan/OkigaeSan/Animation/";
         private AnimationClip CreateAnimation(GameObject obj,string uniqeName ,bool state)
         {
-            string AssetsPath = "Assets/KanKan/OkigaeSan/Animation/";
-
             float val = state ? 1f : 0f;
             string sState = state ? "_On" : "_Off";
 
@@ -22,7 +20,26 @@ namespace OkigaeSan
             clip.name = uniqeName + sState;
 
             clip.SetCurve(Utilty.GetFullPath(obj), typeof(GameObject), "isActive", curve);
-            AssetDatabase.CreateAsset(clip, AssetsPath + clip.name + ".anim");
+            AssetDatabase.CreateAsset(clip, AnimationFolderPath + clip.name + ".anim");
+
+            return clip;
+        }
+
+        private AnimationClip CreateAnimation(GameObject[] objs,string uniqeName ,bool state)
+        {
+            float val = state ? 1f : 0f;
+            string sState = state ? "_On" : "_Off";
+
+            var curve = AnimationCurve.Linear(0, val, (float)1 / 60, val);
+            var clip = new AnimationClip();
+
+            clip.name = uniqeName + sState;
+
+            foreach (var obj in objs)
+            {
+            clip.SetCurve(Utilty.GetFullPath(obj), typeof(GameObject), "isActive", curve);
+            }
+            AssetDatabase.CreateAsset(clip, AnimationFolderPath + clip.name + ".anim");
 
             return clip;
         }
