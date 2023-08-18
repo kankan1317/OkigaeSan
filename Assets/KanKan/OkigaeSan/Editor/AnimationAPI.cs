@@ -4,12 +4,15 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
+using VRC.SDKBase;
+using VRC.SDK3.Avatars.Components;
 
 namespace OkigaeSan
 {
     public partial class AnimationManager
     {
         private readonly string AnimationFolderPath = "Assets/KanKan/OkigaeSan/Animation/";
+        private readonly string AnimationManagerLayerName = "OS_GroupAnimations";
         private AnimationClip CreateAnimation(GameObject obj,string uniqeName ,bool state)
         {
             return CreateAnimation(new GameObject[] {obj}, uniqeName, state);
@@ -35,7 +38,59 @@ namespace OkigaeSan
         }
         private void CreateParamaterManagerLayer()
         {
+            var rootStateMachine = new AnimatorStateMachine
+            {
+                anyStatePosition = new Vector3(0, -100, 0),
+                entryPosition = Vector3.zero,
+                exitPosition = new Vector3(0, 200, 0)
+            };
 
+            var emptyState = new AnimatorState
+            {
+                name = "Empty",
+                writeDefaultValues = false
+            };
+
+            var resetState = new AnimatorState
+            {
+                name = "DefaultReset",
+                writeDefaultValues = false,
+                behaviours = new StateMachineBehaviour[] { ParamaterManager.GetResetDriver(AnimationManagerLayerName) }
+            };
+
+            var paramater = new AnimatorControllerParameter
+            {
+                name = AnimationManagerLayerName,
+                type = AnimatorControllerParameterType.Int,
+                defaultInt = 0
+            };
+
+            var transition = new AnimatorStateTransition
+            {
+                hasExitTime = true,
+                conditions = new AnimatorCondition[] { },
+                destinationState = emptyState
+            };
+
+            var layer = new AnimatorControllerLayer
+            {
+                name = AnimationManagerLayerName,
+                avatarMask = null,
+                defaultWeight = 1,
+                blendingMode = AnimatorLayerBlendingMode.Override,
+                syncedLayerAffectsTiming = false,
+                iKPass = false,
+                stateMachine = rootStateMachine
+            };
+
+            _controller.AddParameter(paramater);
+
+            resetState.AddTransition(transition);
+
+            rootStateMachine.AddState(emptyState, new Vector3(-20, 100, 0));
+            rootStateMachine.AddState(resetState, new Vector3(1200, 100, 0));
+
+            _controller.AddLayer(layer);
         }
 
         private ParamaterManager GetParamaterManager(string pName)
