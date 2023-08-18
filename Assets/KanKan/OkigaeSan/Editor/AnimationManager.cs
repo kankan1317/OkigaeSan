@@ -56,6 +56,14 @@ namespace OkigaeSan
             CreateOnOffLayer(defaultAnim, secondAnim, uniqeName, defaultBool);
         }
 
+        public void AddObjects(GameObject[] objs, string uniqeName, bool defaultBool)
+        {
+            var defaultAnim = CreateAnimation(objs, uniqeName ,defaultBool);
+            var secondAnim = CreateAnimation(objs, uniqeName, !defaultBool);
+
+            CreateOnOffLayer(defaultAnim,secondAnim, uniqeName, defaultBool);
+        }
+
         public void RemoveObjects(string uniqeName)
         {
 
