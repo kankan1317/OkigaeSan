@@ -201,4 +201,59 @@ namespace OkigaeSan
             return objects;
         }
     }
+    public class ParamaterManager
+    {
+        private List<VRC_AvatarParameterDriver.Parameter> parameters;
+
+        public static VRCAvatarParameterDriver GetResetDriver(string pName)
+        {
+            var driver = new VRCAvatarParameterDriver();
+            var parameter = new VRC_AvatarParameterDriver.Parameter();
+            parameter.type = VRC_AvatarParameterDriver.ChangeType.Set;
+            parameter.name = pName;
+            parameter.value = 0f;
+
+            driver.isEnabled = true;
+            driver.isLocalPlayer = false;
+            driver.parameters = new List<VRC_AvatarParameterDriver.Parameter> { parameter };
+
+            return driver;
+        }
+        public ParamaterManager()
+        {
+            parameters = new List<VRC_AvatarParameterDriver.Parameter>();
+        }
+
+        public void AddParameter(string uniqeName, bool value)
+        {
+            var parameter = new VRC_AvatarParameterDriver.Parameter();
+            parameter.type = VRC_AvatarParameterDriver.ChangeType.Set;
+            parameter.name = uniqeName;
+            parameter.value = value ? 1f : 0f;
+            parameters.Add(parameter);
+        }
+
+        public void RemoveParameter(string uniqeName)
+        {
+            var newParameters = new List<VRC_AvatarParameterDriver.Parameter>();
+            foreach (var parameter in parameters)
+            {
+                if (parameter.name != uniqeName)
+                {
+                    newParameters.Add(parameter);
+                }
+            }
+            parameters = newParameters;
+        }
+
+        public VRCAvatarParameterDriver GetDriver()
+        {
+            var driver = new VRCAvatarParameterDriver();
+            driver.isEnabled = true;
+            driver.isLocalPlayer = false;
+            driver.parameters = parameters;
+            
+            return driver;
+        }
+    }
 }

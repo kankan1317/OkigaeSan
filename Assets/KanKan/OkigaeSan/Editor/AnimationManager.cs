@@ -69,9 +69,4 @@ namespace OkigaeSan
             DeleteOnOffLayer(uniqeName);
         }
     }
-
-    public class ParamaterManager
-    {
-
-    }
 }
