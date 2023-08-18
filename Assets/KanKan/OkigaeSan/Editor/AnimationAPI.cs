@@ -48,13 +48,13 @@ namespace OkigaeSan
             var emptyState = new AnimatorState
             {
                 name = "Empty",
-                writeDefaultValues = false
+                writeDefaultValues = _WriteDefault
             };
 
             var resetState = new AnimatorState
             {
                 name = "DefaultReset",
-                writeDefaultValues = false,
+                writeDefaultValues = _WriteDefault,
                 behaviours = new StateMachineBehaviour[] { ParamaterManager.GetResetDriver(AnimationManagerLayerName) }
             };
 
