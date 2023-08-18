@@ -62,6 +62,32 @@ namespace OkigaeSan
             return 0;
         }
 
+        private AnimatorState GetAnimatorState(string targetLayer, string stateName)
+        {
+            AnimatorControllerLayer layer = null;
+            AnimatorState state = null;
+
+            for (int i = 0; i < _controller.layers.Length; i++)
+            {
+                if (_controller.layers[i].name == targetLayer)
+                {
+                    layer = _controller.layers[i];
+                    break;
+                }
+            }
+            if (layer == null) return null;
+
+            foreach (var _state in layer.stateMachine.states)
+            {
+                if (_state.state.name == stateName)
+                {
+                    state = _state.state;
+                    break;
+                }
+            }
+            return state;
+        }
+
         private void CreateOnOffLayer(AnimationClip firstAnim, AnimationClip secondAnim, string uniqeName, bool defaultBool)
         {
             var rootStateMachine = new AnimatorStateMachine
