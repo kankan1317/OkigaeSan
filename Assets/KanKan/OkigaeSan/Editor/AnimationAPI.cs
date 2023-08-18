@@ -37,7 +37,7 @@ namespace OkigaeSan
 
             foreach (var obj in objs)
             {
-            clip.SetCurve(Utilty.GetFullPath(obj), typeof(GameObject), "isActive", curve);
+                clip.SetCurve(Utilty.GetFullPath(obj), typeof(GameObject), "isActive", curve);
             }
             AssetDatabase.CreateAsset(clip, AnimationFolderPath + clip.name + ".anim");
 
@@ -140,6 +140,23 @@ namespace OkigaeSan
         private void DeleteOnOffLayer(string layerName, string localParamater)
         {
 
+        }
+
+        private GameObject[] GetAnimatedObjects(AnimationClip clip)
+        {
+            var curveBindongs = AnimationUtility.GetCurveBindings(clip);
+
+            var objects = new GameObject[curveBindongs.Length];
+
+            for (int i = 0; i < curveBindongs.Length; i++)
+            {
+                var targetObj = curveBindongs[i].path.Length > 0
+                    ? GameObject.Find(curveBindongs[i].path)
+                    : null;
+                objects[i] = targetObj;
+            }
+
+            return objects;
         }
     }
 }
