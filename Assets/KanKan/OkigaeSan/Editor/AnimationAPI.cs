@@ -97,9 +97,65 @@ namespace OkigaeSan
         {
             return new ParamaterManager();
         }
-        private void SetPramaterManager(ParamaterManager pManager)
+        public void SetPramaterManager(string pName, ParamaterManager pManager)
         {
+            int outfitNum = GetAvailableOutFitNum();
+            float yPos = GetAvailableParamaterManagerYPos();
+            var stateMachine = GetAnimatorLayer(AnimationManagerLayerName).stateMachine;
+            var stateEmpty = GetAnimatorState(AnimationManagerLayerName, "Empty");
 
+            var stateOn = new AnimatorState
+            {
+                name = pName + "_On",
+                writeDefaultValues = _WriteDefault,
+                behaviours = new StateMachineBehaviour[] {pManager.GetDriver(true)}
+            };
+            var stateOff = new AnimatorState
+            {
+                name = pName + "_Off",
+                writeDefaultValues = _WriteDefault,
+                behaviours = new StateMachineBehaviour[] { pManager.GetDriver(false) }
+            };
+            var stateWait = new AnimatorState
+            {
+                name = pName + "_Wait",
+                writeDefaultValues = _WriteDefault,
+                behaviours = new StateMachineBehaviour[] { ParamaterManager.GetResetDriver(AnimationManagerLayerName) }
+            };
+
+            var transitionOn = new AnimatorStateTransition
+            {
+                hasExitTime = false,
+                conditions = new AnimatorCondition[] {new AnimatorCondition { mode = AnimatorConditionMode.Equals, parameter = AnimationManagerLayerName , threshold = outfitNum} },
+                destinationState = stateOn
+            };
+            var transitionWait = new AnimatorStateTransition
+            {
+                hasExitTime = false,
+                conditions = new AnimatorCondition[] { },
+                destinationState = stateWait
+            };
+            var transitionOff = new AnimatorStateTransition
+            {
+                hasExitTime = false,
+                conditions = new AnimatorCondition[] { new AnimatorCondition { mode = AnimatorConditionMode.NotEqual, parameter = AnimationManagerLayerName , threshold = 0} },
+                destinationState = stateOff
+            };
+            var transitionReset = new AnimatorStateTransition
+            {
+                hasExitTime = false,
+                conditions = new AnimatorCondition[] { },
+                destinationState = GetAnimatorState(AnimationManagerLayerName, "DefaultReset")
+            };
+
+            stateEmpty.AddTransition(transitionOn);
+            stateOn.AddTransition(transitionWait);
+            stateWait.AddTransition(transitionOff);
+            stateOff.AddTransition(transitionReset);
+
+            stateMachine.AddState(stateOn, new Vector3(300, yPos, 0));
+            stateMachine.AddState(stateWait, new Vector3(600, yPos, 0));
+            stateMachine.AddState(stateOff, new Vector3(900, yPos, 0));
         }
 
         private void RemovePramaterManager(string pName)
@@ -117,19 +173,50 @@ namespace OkigaeSan
             return 0;
         }
 
-        private AnimatorState GetAnimatorState(string targetLayer, string stateName)
+        private float GetAvailableParamaterManagerYPos()
+        {
+            float yPos = 200f;
+            var layer = GetAnimatorLayer(AnimationManagerLayerName);
+
+            foreach (var state in layer.stateMachine.states)
+            {
+                string stateName = state.state.name;
+                
+                if (stateName != "Empty" &&  stateName != "DefaultReset")
+                {
+                    if (yPos == state.position.y)
+                    {
+                        yPos += 100f;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+            return yPos;
+        }
+        private AnimatorControllerLayer GetAnimatorLayer(string layerName)
         {
             AnimatorControllerLayer layer = null;
-            AnimatorState state = null;
 
             for (int i = 0; i < _controller.layers.Length; i++)
             {
-                if (_controller.layers[i].name == targetLayer)
+                if (_controller.layers[i].name == layerName)
                 {
                     layer = _controller.layers[i];
                     break;
                 }
             }
+            return layer;
+        }
+
+        private AnimatorState GetAnimatorState(string targetLayer, string stateName)
+        {
+            AnimatorControllerLayer layer;
+            AnimatorState state = null;
+
+            layer = GetAnimatorLayer(targetLayer);
             if (layer == null) return null;
 
             foreach (var _state in layer.stateMachine.states)
@@ -258,7 +345,7 @@ namespace OkigaeSan
     }
     public class ParamaterManager
     {
-        private List<VRC_AvatarParameterDriver.Parameter> parameters;
+        private List<string> parameterNames;
 
         public static VRCAvatarParameterDriver GetResetDriver(string pName)
         {
@@ -276,36 +363,43 @@ namespace OkigaeSan
         }
         public ParamaterManager()
         {
-            parameters = new List<VRC_AvatarParameterDriver.Parameter>();
+            parameterNames = new List<string>();
         }
 
-        public void AddParameter(string uniqeName, bool value)
+        public void AddParameter(string uniqeName)
         {
-            var parameter = new VRC_AvatarParameterDriver.Parameter();
-            parameter.type = VRC_AvatarParameterDriver.ChangeType.Set;
-            parameter.name = uniqeName;
-            parameter.value = value ? 1f : 0f;
-            parameters.Add(parameter);
+            parameterNames.Add(uniqeName);
         }
 
         public void RemoveParameter(string uniqeName)
         {
-            var newParameters = new List<VRC_AvatarParameterDriver.Parameter>();
-            foreach (var parameter in parameters)
+            var newParameters = new List<string>();
+            foreach (var parameter in parameterNames)
             {
-                if (parameter.name != uniqeName)
+                if (parameter != uniqeName)
                 {
                     newParameters.Add(parameter);
                 }
             }
-            parameters = newParameters;
+            parameterNames = newParameters;
         }
 
-        public VRCAvatarParameterDriver GetDriver()
+        public VRCAvatarParameterDriver GetDriver(bool value)
         {
             var driver = new VRCAvatarParameterDriver();
             driver.isEnabled = true;
             driver.isLocalPlayer = false;
+            var parameters = new List<VRC_AvatarParameterDriver.Parameter>();
+
+            float VRC_value = value ? 1f : 0f;
+            foreach (var parameterName in parameterNames)
+            {
+                var parameter = new VRC_AvatarParameterDriver.Parameter();
+                parameter.type = VRC_AvatarParameterDriver.ChangeType.Set;
+                parameter.name = parameterName;
+                parameter.value = VRC_value;
+                parameters.Add(parameter);
+            }
             driver.parameters = parameters;
             
             return driver;
