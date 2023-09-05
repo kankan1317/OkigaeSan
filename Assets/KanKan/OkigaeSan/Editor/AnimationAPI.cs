@@ -169,9 +169,6 @@ namespace OkigaeSan
             rootStateMachine.AddState(SelectState, new Vector3(0, 300, 0));
             rootStateMachine.AddState(Select2State, new Vector3(900, 300, 0));
 
-            rootStateMachine.AddState(emptyState, new Vector3(-20, 100, 0));
-            rootStateMachine.AddState(resetState, new Vector3(1200, 100, 0));
-
             _controller.AddLayer(layer);
         }
 
@@ -327,8 +324,8 @@ namespace OkigaeSan
                     {
                         yPos += 100f;
                     }
-                    }
                 }
+            }
             return yPos;
         }
         private AnimatorControllerLayer GetAnimatorLayer(string layerName)
@@ -476,14 +473,14 @@ namespace OkigaeSan
         }
         private GameObject[] GetAnimatedObjects(AnimationClip clip)
         {
-            var curveBindongs = AnimationUtility.GetCurveBindings(clip);
+            var curveBindings = AnimationUtility.GetCurveBindings(clip);
 
-            var objects = new GameObject[curveBindongs.Length];
+            var objects = new GameObject[curveBindings.Length];
 
-            for (int i = 0; i < curveBindongs.Length; i++)
+            for (int i = 0; i < curveBindings.Length; i++)
             {
-                var targetObj = curveBindongs[i].path.Length > 0
-                    ? GameObject.Find(curveBindongs[i].path)
+                var targetObj = curveBindings[i].path.Length > 0
+                    ? GameObject.Find(curveBindings[i].path)
                     : null;
                 objects[i] = targetObj;
             }
@@ -493,7 +490,7 @@ namespace OkigaeSan
     }
     public class ParamaterManager
     {
-        private List<string> parameterNames;
+        private Dictionary<string,bool> parameters;
 
         public static VRCAvatarParameterDriver GetResetDriver(string pName)
         {
@@ -504,48 +501,44 @@ namespace OkigaeSan
             parameter.value = 0f;
 
             driver.isEnabled = true;
-            driver.isLocalPlayer = false;
+            //driver.isLocalPlayer = true;
+            driver.localOnly = true;
             driver.parameters = new List<VRC_AvatarParameterDriver.Parameter> { parameter };
 
             return driver;
         }
         public ParamaterManager()
         {
-            parameterNames = new List<string>();
+            parameters = new Dictionary<string, bool>();
         }
 
-        public void AddParameter(string uniqeName)
+        public void AddParameter(string uniqeName, bool defaultBool)
         {
-            parameterNames.Add(uniqeName);
+            parameters.Add(uniqeName, defaultBool);
         }
 
         public void RemoveParameter(string uniqeName)
         {
-            var newParameters = new List<string>();
-            foreach (var parameter in parameterNames)
+            if (this.parameters.ContainsKey(uniqeName))
             {
-                if (parameter != uniqeName)
-                {
-                    newParameters.Add(parameter);
-                }
+                parameters.Remove(uniqeName);
             }
-            parameterNames = newParameters;
         }
 
         public VRCAvatarParameterDriver GetDriver(bool value)
         {
             var driver = new VRCAvatarParameterDriver();
             driver.isEnabled = true;
-            driver.isLocalPlayer = false;
+            //driver.isLocalPlayer = true;
+            driver.localOnly = true;
             var parameters = new List<VRC_AvatarParameterDriver.Parameter>();
 
-            float VRC_value = value ? 1f : 0f;
-            foreach (var parameterName in parameterNames)
+            foreach (var kvp in this.parameters)
             {
                 var parameter = new VRC_AvatarParameterDriver.Parameter();
                 parameter.type = VRC_AvatarParameterDriver.ChangeType.Set;
-                parameter.name = parameterName;
-                parameter.value = VRC_value;
+                parameter.name = kvp.Key;
+                parameter.value = value == kvp.Value ? 1f : 0f;
                 parameters.Add(parameter);
             }
             driver.parameters = parameters;

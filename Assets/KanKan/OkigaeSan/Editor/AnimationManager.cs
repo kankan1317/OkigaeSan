@@ -28,6 +28,7 @@ namespace OkigaeSan
                 _controller = controller,
                 _WriteDefault = writeDefault
             };
+            manager.CreateDefaultParametars();
             manager.CreateParamaterManagerLayer();
 
             return manager;
