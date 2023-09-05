@@ -11,8 +11,13 @@ namespace OkigaeSan
 {
     public partial class AnimationManager
     {
-        private readonly string AnimationFolderPath = "Assets/KanKan/OkigaeSan/Animation/";
-        private readonly string AnimationManagerLayerName = "OS_GroupAnimations";
+        private static readonly string ToolResoruceFolderPath = "Assets/KanKan/OkigaeSan/Tool_resource/";
+        private static readonly string AnimationFolderPath = "Assets/KanKan/OkigaeSan/Animation/";
+        private static readonly string AnimationManagerLayerName = "OS_GroupAnimations";
+        private static readonly string AnimationManagerIsLocal = "IsLocal";
+        private static readonly string AnimationManagerIsFirstLoad = "OS_IsFirstLoad";
+
+        private static AnimationClip DumyClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(AnimationManager.ToolResoruceFolderPath + "Dumy.animation");
         private AnimationClip CreateAnimation(GameObject obj,string uniqeName ,bool state)
         {
             return CreateAnimation(new GameObject[] {obj}, uniqeName, state);
@@ -36,40 +41,113 @@ namespace OkigaeSan
 
             return clip;
         }
+
+        private void CreateDefaultParametars()
+        {
+            if (!this.ExistParametar(AnimationManager.AnimationManagerLayerName))
+            {
+                var paramater = new AnimatorControllerParameter
+                {
+                    name = AnimationManagerLayerName,
+                    type = AnimatorControllerParameterType.Int,
+                    defaultInt = 0
+                };
+                _controller.AddParameter(paramater);
+            }
+
+            if (!this.ExistParametar(AnimationManager.AnimationManagerIsFirstLoad))
+            {
+                var paramater = new AnimatorControllerParameter
+                {
+                    name = AnimationManager.AnimationManagerIsFirstLoad,
+                    type = AnimatorControllerParameterType.Bool,
+                    defaultBool = false
+                };
+                _controller.AddParameter(paramater);
+            }
+
+            if (!this.ExistParametar(AnimationManager.AnimationManagerIsLocal))
+            {
+                var paramater = new AnimatorControllerParameter
+                {
+                    name = AnimationManager.AnimationManagerIsLocal,
+                    type = AnimatorControllerParameterType.Bool,
+                    defaultBool = false
+                };
+                _controller.AddParameter(paramater);
+            }
+        }
         private void CreateParamaterManagerLayer()
         {
             var rootStateMachine = new AnimatorStateMachine
             {
-                anyStatePosition = new Vector3(0, -100, 0),
-                entryPosition = Vector3.zero,
-                exitPosition = new Vector3(0, 200, 0)
+                anyStatePosition = new Vector3(20, -100, 0),
+                entryPosition = new Vector3(20, 0, 0),
+                exitPosition = new Vector3(1500, 300, 0)
             };
 
-            var emptyState = new AnimatorState
+            var IsLocalState = new AnimatorState
             {
-                name = "Empty",
-                writeDefaultValues = _WriteDefault
-            };
-
-            var resetState = new AnimatorState
-            {
-                name = "DefaultReset",
+                name = AnimationManager.AnimationManagerIsLocal,
                 writeDefaultValues = _WriteDefault,
-                behaviours = new StateMachineBehaviour[] { ParamaterManager.GetResetDriver(AnimationManagerLayerName) }
+                motion = AnimationManager.DumyClip
             };
 
-            var paramater = new AnimatorControllerParameter
+            var IsFirstLoadState = new AnimatorState
             {
-                name = AnimationManagerLayerName,
-                type = AnimatorControllerParameterType.Int,
-                defaultInt = 0
+                name = AnimationManager.AnimationManagerIsFirstLoad,
+                writeDefaultValues = _WriteDefault,
+                motion = AnimationManager.DumyClip
             };
 
-            var transition = new AnimatorStateTransition
+            var SelectState = new AnimatorState
             {
-                hasExitTime = true,
-                conditions = new AnimatorCondition[] { },
-                destinationState = emptyState
+                name = "Select",
+                writeDefaultValues = _WriteDefault,
+                motion = AnimationManager.DumyClip
+            };
+
+            var Select2State = new AnimatorState
+            {
+                name = "Select2",
+                writeDefaultValues = _WriteDefault,
+                motion = AnimationManager.DumyClip
+            };
+
+            var IsLocalCondtion = new AnimatorCondition
+            {
+                parameter = AnimationManager.AnimationManagerIsLocal,
+                mode = AnimatorConditionMode.If
+            };
+
+            var IsFirstLoadCondtion = new AnimatorCondition
+            {
+                parameter = AnimationManager.AnimationManagerIsFirstLoad,
+                mode = AnimatorConditionMode.If
+            };
+
+            var IsLocalTransition = new AnimatorStateTransition
+            {
+                hasExitTime = false,
+                hasFixedDuration = false,
+                exitTime = 0,
+                duration = 0,
+                offset = 0,
+                interruptionSource = TransitionInterruptionSource.None,
+                conditions = new AnimatorCondition[] { IsLocalCondtion },
+                destinationState = IsFirstLoadState
+            };
+
+            var IsFirstLoadTransition = new AnimatorStateTransition
+            {
+                hasExitTime = false,
+                hasFixedDuration = false,
+                exitTime = 0,
+                duration = 0,
+                offset = 0,
+                interruptionSource = TransitionInterruptionSource.None,
+                conditions = new AnimatorCondition[] { IsFirstLoadCondtion },
+                destinationState = SelectState
             };
 
             var layer = new AnimatorControllerLayer
@@ -83,9 +161,13 @@ namespace OkigaeSan
                 stateMachine = rootStateMachine
             };
 
-            _controller.AddParameter(paramater);
+            IsLocalState.AddTransition(IsLocalTransition);
+            IsFirstLoadState.AddTransition(IsFirstLoadTransition);
 
-            resetState.AddTransition(transition);
+            rootStateMachine.AddState(IsLocalState, new Vector3(0, 100, 0));
+            rootStateMachine.AddState(IsFirstLoadState, new Vector3(0, 200, 0));
+            rootStateMachine.AddState(SelectState, new Vector3(0, 300, 0));
+            rootStateMachine.AddState(Select2State, new Vector3(900, 300, 0));
 
             rootStateMachine.AddState(emptyState, new Vector3(-20, 100, 0));
             rootStateMachine.AddState(resetState, new Vector3(1200, 100, 0));
@@ -99,10 +181,19 @@ namespace OkigaeSan
         }
         public void SetPramaterManager(string pName, ParamaterManager pManager)
         {
-            int outfitNum = GetAvailableOutFitNum();
-            float yPos = GetAvailableParamaterManagerYPos();
-            var stateMachine = GetAnimatorLayer(AnimationManagerLayerName).stateMachine;
-            var stateEmpty = GetAnimatorState(AnimationManagerLayerName, "Empty");
+            int outfitNum = this.GetAvailableOutFitNum();
+            float yPos = this.GetAvailableParamaterManagerYPos();
+            var stateMachine = this.GetAnimatorLayer(AnimationManagerLayerName).stateMachine;
+            var stateEmpty = this.GetAnimatorState(AnimationManagerLayerName, "Empty");
+            var selectState = this.GetAnimatorState(AnimationManager.AnimationManagerLayerName, "Select");
+            var select2State = this.GetAnimatorState(AnimationManager.AnimationManagerLayerName, "Select2");
+
+            var waitState = new AnimatorState
+            {
+                name = "Wait" + outfitNum,
+                writeDefaultValues = _WriteDefault,
+                motion = AnimationManager.DumyClip
+            };
 
             var stateOn = new AnimatorState
             {
@@ -116,46 +207,90 @@ namespace OkigaeSan
                 writeDefaultValues = _WriteDefault,
                 behaviours = new StateMachineBehaviour[] { pManager.GetDriver(false) }
             };
-            var stateWait = new AnimatorState
+
+            var EqualOutfitNumCondition = new AnimatorCondition
             {
-                name = pName + "_Wait",
-                writeDefaultValues = _WriteDefault,
-                behaviours = new StateMachineBehaviour[] { ParamaterManager.GetResetDriver(AnimationManagerLayerName) }
+                parameter = AnimationManager.AnimationManagerLayerName,
+                mode = AnimatorConditionMode.Equals,
+                threshold = outfitNum
             };
 
-            var transitionOn = new AnimatorStateTransition
+            var NotEqualOutfitCondition = new AnimatorCondition
             {
-                hasExitTime = false,
-                conditions = new AnimatorCondition[] {new AnimatorCondition { mode = AnimatorConditionMode.Equals, parameter = AnimationManagerLayerName , threshold = outfitNum} },
-                destinationState = stateOn
+                parameter = AnimationManager.AnimationManagerLayerName,
+                mode = AnimatorConditionMode.NotEqual,
+                threshold = outfitNum
             };
-            var transitionWait = new AnimatorStateTransition
+
+            var select2WaitTransition = new AnimatorStateTransition
             {
                 hasExitTime = false,
-                conditions = new AnimatorCondition[] { },
-                destinationState = stateWait
+                exitTime = 0,
+                hasFixedDuration = false,
+                duration = 0,
+                offset = 0,
+                interruptionSource = TransitionInterruptionSource.None,
+                conditions = new AnimatorCondition[] { EqualOutfitNumCondition },
+                destinationState = waitState
             };
-            var transitionOff = new AnimatorStateTransition
+
+            var wait2OffTransition = new AnimatorStateTransition
             {
                 hasExitTime = false,
-                conditions = new AnimatorCondition[] { new AnimatorCondition { mode = AnimatorConditionMode.NotEqual, parameter = AnimationManagerLayerName , threshold = 0} },
+                exitTime = 0,
+                hasFixedDuration = false,
+                duration = 0,
+                offset = 0,
+                interruptionSource = TransitionInterruptionSource.None,
+                conditions = new AnimatorCondition[] { NotEqualOutfitCondition },
                 destinationState = stateOff
             };
-            var transitionReset = new AnimatorStateTransition
+
+            var off2SelectTransition = new AnimatorStateTransition
             {
-                hasExitTime = false,
+                hasExitTime = true,
+                exitTime = 0,
+                hasFixedDuration = false,
+                duration = 0,
+                offset = 0,
+                interruptionSource = TransitionInterruptionSource.None,
                 conditions = new AnimatorCondition[] { },
-                destinationState = GetAnimatorState(AnimationManagerLayerName, "DefaultReset")
+                destinationState = select2State
             };
 
-            stateEmpty.AddTransition(transitionOn);
-            stateOn.AddTransition(transitionWait);
-            stateWait.AddTransition(transitionOff);
-            stateOff.AddTransition(transitionReset);
+            var select22OnTransition = new AnimatorStateTransition
+            {
+                hasExitTime = false,
+                exitTime = 0,
+                hasFixedDuration = false,
+                duration = 0,
+                offset = 0,
+                interruptionSource = TransitionInterruptionSource.None,
+                conditions = new AnimatorCondition[] { EqualOutfitNumCondition },
+                destinationState = stateOn
+            };
 
-            stateMachine.AddState(stateOn, new Vector3(300, yPos, 0));
-            stateMachine.AddState(stateWait, new Vector3(600, yPos, 0));
-            stateMachine.AddState(stateOff, new Vector3(900, yPos, 0));
+            var on2ExitTransition = new AnimatorStateTransition
+            {
+                hasExitTime = true,
+                exitTime = 0,
+                hasFixedDuration = false,
+                duration = 0,
+                offset = 0,
+                interruptionSource = TransitionInterruptionSource.None,
+                isExit = true,
+                conditions = new AnimatorCondition[] { }
+            };
+
+            selectState.AddTransition(select2WaitTransition);
+            waitState.AddTransition(wait2OffTransition);
+            stateOff.AddTransition(off2SelectTransition);
+            select2State.AddTransition(select22OnTransition);
+            stateOn.AddTransition(on2ExitTransition);
+
+            stateMachine.AddState(waitState, new Vector3(300, yPos, 0));
+            stateMachine.AddState(stateOff, new Vector3(600, yPos, 0));
+            stateMachine.AddState(stateOn, new Vector3(1200, yPos, 0));
         }
 
         private void RemovePramaterManager(string pName)
@@ -170,30 +305,30 @@ namespace OkigaeSan
 
         private int GetAvailableOutFitNum()
         {
-            return 0;
+            float yPos = this.GetAvailableParamaterManagerYPos();
+            return (int)((yPos - 300f) / 100f);
         }
 
         private float GetAvailableParamaterManagerYPos()
         {
-            float yPos = 200f;
+            float yPos = 300f;
             var layer = GetAnimatorLayer(AnimationManagerLayerName);
 
             foreach (var state in layer.stateMachine.states)
             {
                 string stateName = state.state.name;
                 
-                if (stateName != "Empty" &&  stateName != "DefaultReset")
+                if (stateName != AnimationManager.AnimationManagerIsLocal
+                    && stateName != AnimationManager.AnimationManagerIsFirstLoad
+                    && stateName != "Select"
+                    && stateName != "Select2")
                 {
                     if (yPos == state.position.y)
                     {
                         yPos += 100f;
                     }
-                    else
-                    {
-                        break;
                     }
                 }
-            }
             return yPos;
         }
         private AnimatorControllerLayer GetAnimatorLayer(string layerName)
@@ -326,6 +461,19 @@ namespace OkigaeSan
             }
         }
 
+        private bool ExistParametar(string uniqeName)
+        {
+            bool exist = false;
+            foreach (var param in _controller.parameters)
+            {
+                if (param.name == uniqeName)
+                {
+                    exist = true;
+                    break;
+                }
+            }
+            return exist;
+        }
         private GameObject[] GetAnimatedObjects(AnimationClip clip)
         {
             var curveBindongs = AnimationUtility.GetCurveBindings(clip);
