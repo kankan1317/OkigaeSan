@@ -1,11 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
 
 
 namespace OkigaeSan
 {
-    public class Utilty
+    public static class Utilty
     {
         public static List<GameObject> GetChildren(GameObject obj)
         {
@@ -18,7 +19,25 @@ namespace OkigaeSan
             }
             return childrens;
         }
-    }
 
+        public static string GetFullPath(GameObject obj)
+        {
+            return GetFullPath(obj.transform);
+        }
+
+        public static string GetFullPath(Transform obj)
+        {
+            string path = obj.name;
+            var parent = obj.parent;
+
+            while (parent)
+            {
+                path = $"{parent.name}/{path}";
+                parent = parent.parent;
+
+            }
+            return path ;
+        }
+    }
 }
 
