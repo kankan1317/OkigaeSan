@@ -7,6 +7,10 @@ namespace OkigaeSan
 {
     public class Utilty
     {
+        public static bool IsOkigaeSanParameter(string parameterName)
+        {
+            return "OS_" == parameterName.Substring(0, 3);
+        }
         public static List<GameObject> GetChildren(GameObject obj)
         {
             List<GameObject> childrens = new List<GameObject>();
